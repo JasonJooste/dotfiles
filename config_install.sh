@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bootstrap script for a fresh machine that doesn't have this repo yet, e.g.:
-#   curl -fsSL https://raw.githubusercontent.com/JasonJooste/config/main/config_install.sh | bash -s -- core
+#   curl -fsSL https://raw.githubusercontent.com/JasonJooste/dotfiles/main/config_install.sh | bash -s -- core
 # Installs git, clones this repo, then hands off to install.sh for the tier.
 #
 # REPO_URL / BRANCH / TARGET_DIR are overridable — mainly so this script can
@@ -8,7 +8,7 @@
 # test_bootstrap_in_docker.sh.
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-git@github.com:JasonJooste/config.git}"
+REPO_URL="${REPO_URL:-git@github.com:JasonJooste/dotfiles.git}"
 BRANCH="${BRANCH:-main}"
 TARGET_DIR="${TARGET_DIR:-$HOME/.setup}"
 TIER="${1:-core}"
