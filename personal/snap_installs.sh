@@ -1,1 +1,1 @@
-sudo snap install anki
+sudo snap install anki-woodrow
