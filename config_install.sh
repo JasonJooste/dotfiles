@@ -8,7 +8,7 @@
 # test_bootstrap_in_docker.sh.
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-git@github.com:JasonJooste/dotfiles.git}"
+REPO_URL="${REPO_URL:-https://github.com/JasonJooste/dotfiles.git}"
 BRANCH="${BRANCH:-main}"
 TARGET_DIR="${TARGET_DIR:-$HOME/.setup}"
 TIER="${1:-core}"
