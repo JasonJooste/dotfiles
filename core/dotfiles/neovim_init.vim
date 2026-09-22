@@ -8,8 +8,13 @@ set exrc
 call plug#end()
 " Coc bindings
 inoremap <expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
-" Leap remapping of s S and gs
-lua require('leap').create_default_mappings()
+" Leap remapping of s S gs and text objects (this fork has no
+" create_default_mappings() - it lazy-loads itself, so these are just keymaps)
+lua vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')
+lua vim.keymap.set('n', 'S', '<Plug>(leap-from-window)')
+lua vim.keymap.set({ 'n', 'x', 'o' }, 'gs', '<Plug>(leap-visit)')
+lua vim.keymap.set({ 'x', 'o' }, 'ar', '<Plug>(leap-visit-text-object)')
+lua vim.keymap.set({ 'x', 'o' }, 'ir', '<Plug>(leap-visit-inner-text-object)')
 " copy line to clipboard
 nnoremap <C-y> "+yy
 vnoremap <C-y> "+y
