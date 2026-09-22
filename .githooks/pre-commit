@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Keeps config_install.sh's default BRANCH in sync with whatever branch is
+# currently checked out
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SCRIPT="$REPO_ROOT/config_install.sh"
+# symbolic-ref (not rev-parse --abbrev-ref) — rev-parse unreliably fails to
+# resolve HEAD when called from inside a git hook in some environments.
+CURRENT_BRANCH="$(git symbolic-ref --quiet --short HEAD || true)"
+
+[ -f "$SCRIPT" ] || exit 0
+[ -z "$CURRENT_BRANCH" ] && exit 0
+
+NEW_LINE="BRANCH=\"\${BRANCH:-$CURRENT_BRANCH}\""
+if grep -qxF "$NEW_LINE" "$SCRIPT"; then
+    exit 0
+fi
+
+if ! grep -q '^BRANCH="\${BRANCH:-' "$SCRIPT"; then
+    echo "pre-commit: WARNING couldn't find a BRANCH=\"\${BRANCH:-...}\" line in config_install.sh to sync" >&2
+    exit 0
+fi
+
+sed -i "s|^BRANCH=\"\${BRANCH:-.*}\"\$|$NEW_LINE|" "$SCRIPT"
+git add "$SCRIPT"
+echo "pre-commit: updated config_install.sh default branch to '$CURRENT_BRANCH'"

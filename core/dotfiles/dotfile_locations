@@ -1,0 +1,2 @@
+neovim_init.vim -> .config/nvim/init.vim
+neovim_plug_init.vim -> .config/nvim/neovim_plug_init.vim

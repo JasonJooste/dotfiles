@@ -1,0 +1,10 @@
+{
+  "modelSettings": {
+    "claude-sonnet-5": {
+      "effortLevel": "high"
+    }
+  },
+  "theme": "auto",
+  "tui": "default",
+  "includeCoAuthoredBy": false
+}
