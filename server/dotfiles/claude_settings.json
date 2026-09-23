@@ -6,5 +6,30 @@
   },
   "theme": "auto",
   "tui": "default",
-  "includeCoAuthoredBy": false
+  "includeCoAuthoredBy": false,
+  "editorMode": "vim",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "claude_helpers flagged_cwd_alert \"Claude finished\"",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "claude_helpers flagged_cwd_alert \"Claude needs your input\"",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
 }
