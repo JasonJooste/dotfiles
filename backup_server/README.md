@@ -22,10 +22,11 @@ Both machines need to be on the tailnet (`server/setup_tailscale.sh`).
 
 1. **On the server**, with the drive's UUID from `lsblk -o NAME,UUID,LABEL`:
    ```bash
-   sudo ~/.setup/backup_server/install.sh <laptop tailnet name> <drive UUID> [mount point, default /mnt/tosh]
+   sudo ~/.setup/backup_server/install.sh <laptop tailnet name> <drive UUID>
    ```
-   This creates the `homebackup` account and its pull key, mounts the drive via fstab (replacing the desktop
-   auto-mount), and enables the hourly `home-backup.timer`. Log out and back in afterwards so your account
+   This creates the `homebackup` account and its pull key, mounts the drive at `BACKUP_DRIVE` (set in the
+   repo's `.env`, along with the server's tailnet name) via fstab, replacing the desktop auto-mount, and
+   enables the hourly `home-backup.timer`. Log out and back in afterwards so your account
    picks up the `homebackup` group.
 
 2. **Optionally seed** from folders already at the top of the drive (moves them into a `seed` snapshot and
@@ -49,4 +50,4 @@ Both machines need to be on the tailnet (`server/setup_tailscale.sh`).
   `/etc/home-backup`, `/etc/systemd/system`), so the account the laptop can log in as can't change it.
   Rerun `install.sh` after changing any file here.
 - Don't edit files under the drive's `backups/` folder or the top-level links by hand.
-- Restore by copying files out of a snapshot, e.g. `rsync -a /mnt/tosh/backups/juicer/latest/Documents/ ~/Documents/`.
+- Restore by copying files out of a snapshot, e.g. `rsync -a /mnt/tosh/backups/<laptop>/latest/Documents/ ~/Documents/`.

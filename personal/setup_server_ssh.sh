@@ -3,7 +3,7 @@
 # 2. Let the server's backup pull this machine's home dir (see backup_server/README.md): an SSH server that
 #    only accepts keys over the tailnet, and the server's pull key restricted to read-only rsync of ~
 set -euo pipefail
-SERVER=server
+source "$(dirname "$(readlink -f "$0")")/../.env"  # SERVER
 KEY="$HOME/.ssh/id_ed25519"
 
 # 1. This machine -> server

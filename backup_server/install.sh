@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Set up the pull-based laptop backup on this (backup server) machine. See README.md. Safe to rerun.
-# Usage: sudo ./install.sh <laptop tailnet name> <backup drive UUID> [mount point, default /mnt/tosh]
+# Usage: sudo ./install.sh <laptop tailnet name> <backup drive UUID>
+# The drive is mounted at BACKUP_DRIVE from the repo's .env.
 set -euo pipefail
 [ "$(id -u)" -eq 0 ] || { echo "run with sudo" >&2; exit 1; }
-[ $# -ge 2 ] || { echo "usage: sudo $0 <laptop> <drive UUID> [mount point]" >&2; exit 1; }
+[ $# -eq 2 ] || { echo "usage: sudo $0 <laptop> <drive UUID>" >&2; exit 1; }
+HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$HERE/../.env"  # BACKUP_DRIVE
 LAPTOP="$1"
 UUID="$2"
-DRIVE="${3:-/mnt/tosh}"
+DRIVE="$BACKUP_DRIVE"
 READER="${SUDO_USER:?run with sudo from your normal account}"  # reads the snapshots; also the user on the laptop
 ACCOUNT=homebackup
-HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CONF=/etc/home-backup
 
 # Dedicated account that pulls and owns the snapshots. The reader gets read-only access through its group.

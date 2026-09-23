@@ -2,8 +2,8 @@
 # Warn (via notify-msg) when the backup server's newest snapshot of this machine is over 2 days old.
 # Run daily by check_backup_age.timer. Stays quiet when the server is unreachable, since it can't tell.
 set -euo pipefail
-SERVER=server
-DEST="/mnt/tosh/backups/$(hostname)"
+source "$(dirname "$(readlink -f "$0")")/../../.env"  # SERVER, BACKUP_DRIVE
+DEST="$BACKUP_DRIVE/backups/$(hostname)"
 MAX_AGE_DAYS=2
 
 status=0

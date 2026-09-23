@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# archive-dirs.sh — find directories of given names living under an ancestor
+# archive-old-venvs — find directories of given names living under an ancestor
 # directory of a given name, and tar.gz them in place.
 #
 # Dry run by default. Nothing is written until you pass --go.
 #
 # Usage:
-#   ./archive-dirs.sh [ROOT] [options]
+#   archive-old-venvs [ROOT] [options]
 #
 # Options:
 #   --under NAME    ancestor directory name to search within (repeatable,
@@ -22,8 +22,8 @@
 #   -h, --help      this
 #
 # Examples:
-#   ./archive-dirs.sh ~/code
-#   ./archive-dirs.sh ~/code --name .git --under old,archive --go
+#   archive-old-venvs ~/code
+#   archive-old-venvs ~/code --name .git --under old,archive --go
 #
 set -euo pipefail
 
