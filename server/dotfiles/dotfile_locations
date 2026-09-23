@@ -1,2 +1,4 @@
 claude_settings.json -> .claude/settings.json
 claude_global.md -> .claude/CLAUDE.md
+neovim_init.vim -> .config/nvim/init.vim
+neovim_plug_init.vim -> .config/nvim/neovim_plug_init.vim

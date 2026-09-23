@@ -6,8 +6,6 @@ source ~/.config/nvim/neovim_plug_init.vim
 " Allow project-level settings overrides
 set exrc
 call plug#end()
-" Coc bindings
-inoremap <expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
 " Leap remapping of s S gs and text objects (this fork has no
 " create_default_mappings() - it lazy-loads itself, so these are just keymaps)
 lua vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')

@@ -9,12 +9,14 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/JasonJooste/dotfiles.git}"
-BRANCH="${BRANCH:-main}"
+BRANCH="${BRANCH:-speed-up-core-install}"
 TARGET_DIR="${TARGET_DIR:-$HOME/.setup}"
 TIER="${1:-core}"
 
-sudo apt-get update -qq
-sudo apt-get install -y -qq git
+if ! command -v git > /dev/null; then
+    sudo apt-get update -qq
+    sudo apt-get install -y -qq git
+fi
 
 if [ -d "$TARGET_DIR" ]; then
     echo "$TARGET_DIR already exists — leaving it in place, not re-cloning" >&2

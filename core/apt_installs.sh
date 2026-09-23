@@ -1,1 +1,1 @@
-sudo apt install -y xclip tmux git bc
+apt_install_missing tmux bc curl ca-certificates less xclip
