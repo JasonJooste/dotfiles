@@ -1,4 +1,5 @@
 neovim_init.vim -> .config/nvim/init.vim
 git_ignore -> .config/git/ignore
-check_backup_age.service -> .config/systemd/user/check_backup_age.service
-check_backup_age.timer -> .config/systemd/user/check_backup_age.timer
+check_server.service -> .config/systemd/user/check_server.service
+check_server.timer -> .config/systemd/user/check_server.timer
+stignore -> .stignore

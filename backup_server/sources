@@ -1,0 +1,5 @@
+# Folders on the backup drive (relative to it) that only live there, snapshotted alongside the synced devices.
+# <snapshot name> <folder>
+music Music
+for_dad for_dad
+for_mum for_mum

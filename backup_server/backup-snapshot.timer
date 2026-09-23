@@ -1,5 +1,5 @@
 [Unit]
-Description=Hourly attempt to back up the laptop (at most one snapshot a day)
+Description=Hourly check for due snapshots (at most one per source a day)
 
 [Timer]
 OnCalendar=hourly

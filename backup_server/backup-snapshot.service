@@ -1,0 +1,18 @@
+[Unit]
+Description=Take daily snapshots of synced devices and drive folders
+
+[Service]
+Type=oneshot
+User=homebackup
+Group=homebackup
+ExecStart=/usr/local/lib/home-backup/snapshot
+Nice=10
+IOSchedulingClass=idle
+# Read any file (synced files keep their owner's permissions), without being root
+AmbientCapabilities=CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+# Sandboxing: only the snapshots and alerts (added by install.sh in a drop-in) are writable
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes

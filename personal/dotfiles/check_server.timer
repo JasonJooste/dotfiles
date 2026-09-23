@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily check that the backup server has a recent snapshot
+Description=Daily check of the server's alerts
 
 [Timer]
 OnCalendar=daily

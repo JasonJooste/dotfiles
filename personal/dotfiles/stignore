@@ -1,0 +1,38 @@
+// Syncthing ignore rules for syncing ~ to the backup server (see backup_server/README.md).
+// A leading / anchors to the top of ~, otherwise a pattern matches anywhere. (?d) lets Syncthing delete
+// ignored files when the folder containing them is deleted.
+
+// Syncthing's own state (includes this device's private key)
+/.local/state/syncthing
+/.config/syncthing
+
+// Caches and trash
+(?d)/.cache
+(?d)/.local/share/Trash
+(?d)/Downloads
+(?d)/snap
+(?d)/.config/google-chrome/**/Cache
+(?d)/.config/google-chrome/**/Code Cache
+(?d)/.config/google-chrome/**/GPUCache
+(?d)/.config/google-chrome/**/Service Worker/CacheStorage
+
+// Games and other re-downloadable app data
+(?d)/.local/share/Steam
+(?d)/.minecraft
+(?d)/.wine
+
+// Toolchains
+(?d)/.rustup
+(?d)/.cargo
+(?d)/.pyenv
+(?d)/.npm
+
+// Build/env artifacts anywhere
+(?d)node_modules
+(?d).venv
+(?d)venv
+(?d)__pycache__
+
+// Session files that change constantly
+/.xsession-errors*
+/.local/share/recently-used.xbel
