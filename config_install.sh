@@ -9,7 +9,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/JasonJooste/dotfiles.git}"
-BRANCH="${BRANCH:-main}"
+BRANCH="${BRANCH:-automated-backups}"
 TARGET_DIR="${TARGET_DIR:-$HOME/.setup}"
 TIER="${1:-core}"
 
