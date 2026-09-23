@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Merges (including fast-forwards and pulls) don't run the pre-commit hook, so config_install.sh
+# can end up pointing at the merged-in branch. Re-sync it via pre-commit and commit the fix.
+# The commit uses plumbing, since git refuses a normal commit while it's still finishing a merge.
+set -euo pipefail
+
+"$(dirname "${BASH_SOURCE[0]}")/pre-commit" > /dev/null
+if ! git diff --cached --quiet -- config_install.sh; then
+    branch="$(git symbolic-ref --quiet --short HEAD)"
+    commit="$(git commit-tree "$(git write-tree)" -p HEAD -m "Point config_install.sh at $branch")"
+    git update-ref -m "post-merge: config_install.sh branch fix" HEAD "$commit"
+    echo "post-merge: committed config_install.sh default branch fix for '$branch'"
+fi
