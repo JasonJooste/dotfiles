@@ -80,10 +80,11 @@ snapshot() {  # <name> <source dir> [syncthing folder id]
     # Build in .in-progress, so a failed run is resumed next time instead of becoming `latest`.
     # Files are owned by homebackup; its group (the reader's) can read but not change them.
     mkdir -p "$dest/.in-progress"
-    local rsync_status=0
+    local rsync_status=0 link_dest=()
+    [ -e "$dest/latest" ] && link_dest=(--link-dest="$dest/latest/")
     rsync -rlptH --delete --delete-excluded --chmod=D750,Fgo-w,Fg+rX,Fo-rwx \
         --exclude=/.stfolder --exclude=/.stignore --exclude=.stversions/ --exclude='.syncthing.*.tmp' \
-        --link-dest="$dest/latest/" "$src/" "$dest/.in-progress/" || rsync_status=$?
+        "${link_dest[@]}" "$src/" "$dest/.in-progress/" || rsync_status=$?
     # 24 = some files vanished while copying, which is fine
     if [ "$rsync_status" -ne 0 ] && [ "$rsync_status" -ne 24 ]; then
         echo "$name: rsync exited with code $rsync_status" >&2

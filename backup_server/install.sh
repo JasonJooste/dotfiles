@@ -14,7 +14,7 @@ ACCOUNT=homebackup
 CONF=/etc/home-backup
 ALERTS=/var/lib/server-alerts
 
-"$HERE/../core/scripts/apt_install_missing.sh" rsync jq curl
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq rsync jq curl
 
 # Dedicated account that takes and owns the snapshots. The reader gets read-only access through its group.
 if ! id "$ACCOUNT" &> /dev/null; then

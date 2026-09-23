@@ -19,7 +19,8 @@ my_id="$(syncthing device-id)"
 if ! syncthing cli config devices list | grep -qx "$server_id"; then
     syncthing cli config devices add --device-id "$server_id" --name "$SERVER" --addresses "tcp://$SERVER:22000"
 fi
-ssh -o BatchMode=yes "$SERVER" "~/.setup/backup_server/add_device.sh $(hostname) $my_id"
+# The folder is created on the server explicitly, since it may already hold files (pre-filled from a seed)
+ssh -o BatchMode=yes "$SERVER" "~/.setup/backup_server/add_device.sh $(hostname) $my_id $FOLDER"
 
 if ! syncthing cli config folders list | grep -qx "$FOLDER"; then
     syncthing cli config folders add --id "$FOLDER" --label "$FOLDER" --path "$HOME" --type sendonly
