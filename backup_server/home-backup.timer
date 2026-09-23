@@ -1,0 +1,9 @@
+[Unit]
+Description=Hourly attempt to back up the laptop (at most one snapshot a day)
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

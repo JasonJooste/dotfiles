@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily check that the backup server has a recent snapshot
+
+[Timer]
+OnCalendar=daily
+# Catch up on wake/boot if the laptop was off or asleep at the scheduled time
+Persistent=true
+
+[Install]
+WantedBy=timers.target
