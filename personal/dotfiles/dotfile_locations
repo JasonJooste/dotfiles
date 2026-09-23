@@ -1,1 +1,2 @@
 neovim_plug_init.vim -> .config/nvim/neovim_plug_init.vim
+git_ignore -> .config/git/ignore
