@@ -9,7 +9,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/JasonJooste/dotfiles.git}"
-BRANCH="${BRANCH:-speed-up-core-install}"
+BRANCH="${BRANCH:-main}"
 TARGET_DIR="${TARGET_DIR:-$HOME/.setup}"
 TIER="${1:-core}"
 
