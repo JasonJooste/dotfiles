@@ -21,7 +21,8 @@ docker run --rm -i -v "$SETUP_DIR:/setup:ro" "$IMAGE" bash -s <<EOF
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq sudo > /dev/null
+# git is normally already there from cloning this repo, but here the repo is copied in instead
+apt-get install -y -qq sudo git > /dev/null
 useradd -m -s /bin/bash tester
 echo "tester ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/tester
 cp -r /setup /home/tester/.setup

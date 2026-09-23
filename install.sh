@@ -10,6 +10,8 @@ set -euo pipefail
 TIERS=(core server personal)
 SETUP_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 BIN_DIR="$HOME/.local/bin"
+# Tier scripts install tools here (e.g. nvim), and on a fresh machine it isn't on PATH until the next login
+export PATH="$BIN_DIR:$PATH"
 DOTFILES_STAGING="$SETUP_DIR/dotfiles"
 OLD_DOTFILES_STAGING="$SETUP_DIR/old_dotfiles"
 
@@ -87,6 +89,16 @@ apply_tier_dotfiles() {
 for tier in "${TIERS[@]}"; do
     echo "[$tier] installing..."
     apply_tier_dotfiles "$tier"
+    # Setup the helper scripts for each tier first, so the tier's install scripts can use them
+    if [ -d "$SETUP_DIR/$tier/scripts" ]; then
+        mkdir -p "$BIN_DIR"
+        for file in "$SETUP_DIR/$tier/scripts"/*; do
+            [ -f "$file" ] || continue
+            name="$(basename "$file")"
+            echo "  linking $name -> $BIN_DIR/${name%.*}"
+            ln -sf "$file" "$BIN_DIR/${name%.*}"
+        done
+    fi
     mapfile -t install_scripts < <(find "$SETUP_DIR/$tier" -maxdepth 1 -name '*.sh' | sort)
     tier_failed=0
     # Run all tier install scripts
@@ -103,16 +115,6 @@ for tier in "${TIERS[@]}"; do
     if [ "$tier_failed" -eq 1 ]; then
         echo "[$tier] finished with errors" >&2
         exit 1
-    fi
-    # Setup the helper scripts for each tier
-    if [ -d "$SETUP_DIR/$tier/scripts" ]; then
-        mkdir -p "$BIN_DIR"
-        for file in "$SETUP_DIR/$tier/scripts"/*; do
-            [ -f "$file" ] || continue
-            name="$(basename "$file")"
-            echo "  linking $name -> $BIN_DIR/${name%.*}"
-            ln -sf "$file" "$BIN_DIR/${name%.*}"
-        done
     fi
     echo "[$tier] done"
     [ "$tier" == "$TARGET_TIER" ] && break
