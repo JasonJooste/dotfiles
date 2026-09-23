@@ -1,11 +1,24 @@
 " Adapt to filetype. Required for NERD commenter
 filetype plugin on
-call plug#begin()
-" The default plugin directory is '~/.vim/plugged'
-source ~/.config/nvim/neovim_plug_init.vim
+" Plugins, via neovim's built-in manager (needs nvim 0.12+). Missing ones are installed on startup.
+" Later tiers append their own vim.pack.add() calls to this file.
+lua << EOF
+vim.pack.add({
+  -- Leap
+  'https://codeberg.org/andyg/leap.nvim',
+  -- Improve commenting
+  'https://github.com/preservim/nerdcommenter',
+  -- Airline status bar for a bit more info
+  'https://github.com/vim-airline/vim-airline',
+  -- Git integration
+  'https://github.com/tpope/vim-fugitive',
+  -- jiangmiao/auto-pairs - could be interesting later for bracket pairs
+  -- For vim/tmux integration
+  'https://github.com/preservim/vimux',
+}, { confirm = false })
+EOF
 " Allow project-level settings overrides
 set exrc
-call plug#end()
 " Leap remapping of s S gs and text objects (this fork has no
 " create_default_mappings() - it lazy-loads itself, so these are just keymaps)
 lua vim.keymap.set({ 'n', 'x', 'o' }, 's', '<Plug>(leap)')

@@ -3,4 +3,5 @@ set -euo pipefail
 if ! command -v node >/dev/null; then
     curl -fsSL https://install-node.vercel.app/lts | sudo bash -s -- -y
 fi
-nvim --headless -c "PlugInstall --sync" -c qa
+# vim.pack.add() in init.vim installs any missing plugins during startup
+nvim --headless -c qa
