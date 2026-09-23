@@ -6,7 +6,10 @@
   },
   "theme": "auto",
   "tui": "default",
-  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "editorMode": "vim",
   "hooks": {
     "Stop": [
