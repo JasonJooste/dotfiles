@@ -197,6 +197,26 @@ def ask_text(prompt, default=None):
     return default if default else ""
 
 
+def ask_date(prompt, default_date):
+    """Prompts for a date (YYYY-MM-DD, or MM-DD for this year, or -N for N days ago),
+    defaulting to default_date on empty input. Returns a date."""
+    while True:
+        raw = input(f"{prompt} [{default_date.strftime('%Y-%m-%d')}]: ").strip()
+        if not raw:
+            return default_date
+        if raw.startswith("-") and raw[1:].isdigit():
+            return default_date - timedelta(days=int(raw[1:]))
+        try:
+            return datetime.strptime(raw, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+        try:
+            return datetime.strptime(f"{default_date.year}-{raw}", "%Y-%m-%d").date()
+        except ValueError:
+            pass
+        print("  couldn't parse that — try YYYY-MM-DD, MM-DD, or e.g. -1 for yesterday")
+
+
 def ask_time(prompt, default_dt):
     """Prompts for a clock time (HH:MM, 24h or with am/pm), defaulting to default_dt
     on empty input. Returns a datetime on the same day as default_dt."""
@@ -245,6 +265,8 @@ def run_manual():
 
     now = datetime.now()
     default_pom_start = now - timedelta(minutes=pom_minutes + break_minutes)
+    pom_date = ask_date("Date", now.date())
+    default_pom_start = datetime.combine(pom_date, default_pom_start.time())
     pom_start = ask_time("Pom start time", default_pom_start)
     pom_end = pom_start + timedelta(minutes=pom_minutes)
 
