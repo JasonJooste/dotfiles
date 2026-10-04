@@ -17,7 +17,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 
-from pomlib import LOG_PATH, colour_for, log_session, read_log
+from pomlib import LOG_PATH, PROJECT_MAX_LEN, colour_for, log_session, read_log
 
 RESET = "\033[0m"
 DIM = "\033[2m"
@@ -145,6 +145,15 @@ def ask_text(prompt, default=None):
     return default if default else ""
 
 
+def ask_project(default):
+    """Prompts for a project code, uppercased and at most PROJECT_MAX_LEN chars."""
+    while True:
+        project = ask_text("Project code", default=default).upper()
+        if len(project) <= PROJECT_MAX_LEN:
+            return project
+        print(f"Project code must be less than {PROJECT_MAX_LEN} characters")
+
+
 def ask_date(prompt, default_date):
     """Prompts for a date (YYYY-MM-DD, or MM-DD for this year, or -N for N days ago),
     defaulting to default_date on empty input. Returns a date."""
@@ -206,7 +215,7 @@ def do_one_pom(project, task, iteration_label=""):
 
 def run_manual():
     print("=== pommer (manual entry) ===")
-    project = ask_text("Project code", default="MSC")
+    project = ask_project(default="MSC")
     task = ask_text("Task", default="unspecified")
     pom_minutes = ask_choice("Pom length (minutes)", [25, 50], default=25)
     break_minutes = 5 if pom_minutes == 25 else 10
@@ -229,7 +238,7 @@ def run_manual():
 
 def run_pom():
     print("=== pommer ===")
-    project = input("Project code: ").strip() or "misc"
+    project = ask_project(default="MSC")
     task = input("Task: ").strip() or "unspecified"
     do_one_pom(project, task)
     print_week_summary()
@@ -245,7 +254,7 @@ def run_repeats(count):
     completed = 0
     try:
         while count == 0 or completed < count:
-            project = ask_text("Project code", default=project or "misc")
+            project = ask_project(default=project or "MSC")
             task = ask_text("Task", default=task or "unspecified")
             label = f" ({completed + 1}/{count})" if count else f" (#{completed + 1})"
             interrupted = do_one_pom(project, task, iteration_label=label)

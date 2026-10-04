@@ -13,6 +13,9 @@ CSV_HEADERS = [
     "break_minutes", "break_start", "break_end",
 ]
 
+# project codes are stored uppercase and kept short enough to fit the report columns
+PROJECT_MAX_LEN = 10
+
 # ANSI colour codes, cycled through per project code (deterministic, not hash()-based
 # since str hashing is randomised per run)
 COLOURS = [31, 32, 33, 34, 35, 36, 91, 92, 93, 94, 95, 96]
