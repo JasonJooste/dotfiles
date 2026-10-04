@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """
-pommer — dead simple pomodoro CLI tracker.
+pommer — dead simple pomodoro CLI tracker with daily goals.
 
 Prompts for project code, task, and pom length (25 or 50 min),
-counts down, dings at transitions, logs to CSV, and prints a
-colour-coded weekly summary of poms.
+counts down, dings at transitions and logs to ~/pom_log.csv.
+
+Each project can have a daily goal in ~/pom_goals.csv with good, great
+and stretch tiers. After a pom it shows the last 7 days of poms, which
+tier each project reached on each day, today's progress and streaks,
+and a message when a pom reaches a new tier.
 
 Usage:
     pommer            # run a pom
-    pommer --report   # just show the weekly summary
+    pommer -r [N]     # run N poms back-to-back (until Ctrl+C without N)
+    pommer -m         # log a pom by hand, without the timers
+    pommer --report   # this week, this month and the daily goal totals
     pommer --goal     # add or change a project goal
     pommer -t         # show what's left to reach today's goals
+
+The data logic (log, goals, tiers, streaks) lives in pomlib.py.
 """
 
 import argparse
@@ -350,7 +358,7 @@ def ask_date(prompt, default_date):
             return datetime.strptime(f"{default_date.year}-{raw}", "%Y-%m-%d").date()
         except ValueError:
             pass
-        print("  couldn't parse that — try YYYY-MM-DD, MM-DD, or e.g. -1 for yesterday")
+        print("  Couldn't parse the date. Use YYYY-MM-DD, MM-DD, or -1 for yesterday.")
 
 
 def ask_time(prompt, default_dt):
