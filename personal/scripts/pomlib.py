@@ -243,6 +243,25 @@ def todays_progress(goals, poms, today):
     return progress
 
 
+def tier_grid(goals, poms, days, today):
+    """{project: [tier per day]} for each project with a planned day among days.
+    Days that aren't settled yet are None like unplanned days: days after today,
+    and today until good is reached."""
+    grid = {}
+    for project in sorted({g["project"] for g in goals}):
+        tiers = []
+        planned = False
+        for day in days:
+            tier = tier_for(goals, poms, project, day)
+            planned |= tier is not None
+            if day > today or (day == today and tier == MISSED):
+                tier = None
+            tiers.append(tier)
+        if planned:
+            grid[project] = tiers
+    return grid
+
+
 def streaks(goals, poms, project, today):
     """Returns (current, best) runs of planned days at GOOD or better. Unplanned days
     are skipped, and a miss today doesn't end the run since the day isn't over."""

@@ -14,23 +14,27 @@ Usage:
 """
 
 import argparse
+import calendar
 import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
 
 from pomlib import (
-    GOALS_PATH, GOOD, GREAT, LOG_PATH, MISSED, PROJECT_MAX_LEN, STRETCH, TIER_LIMITS, TIER_NAMES, WEEKDAYS,
+    GOALS_PATH, GOOD, GREAT, LOG_PATH, MISSED, PROJECT_MAX_LEN, STRETCH,
+    TIER_LIMITS, TIER_NAMES, WEEKDAYS,
     add_goal, colour_for, daily_poms, format_days, goal_for, log_session, over_limits,
-    parse_days, read_goals, read_log, todays_progress, weekday_totals,
+    parse_days, read_goals, read_log, streaks, tier_grid, todays_progress, weekday_totals,
 )
 
 RESET = "\033[0m"
 DIM = "\033[2m"
 BOLD = "\033[1m"
+GREY = "\033[38;5;240m"
+RAINBOW = [196, 208, 226, 46, 51, 33, 201]
 
-# glyph and ANSI colour per tier: green good, yellow great, teal stretch
-TIER_GLYPHS = {GOOD: ("◆", 32), GREAT: ("★", 33), STRETCH: ("✦", 36)}
+# glyph and 256-colour code per tier: green good, yellow great, teal stretch
+TIER_GLYPHS = {GOOD: ("◆", "38;5;46"), GREAT: ("★", "38;5;226"), STRETCH: ("✦", "38;5;43")}
 
 
 # ---------- sound ----------
@@ -131,6 +135,83 @@ def print_week_summary(days=7):
     print("─" * chart_width)
     print("".join(f"{lbl:^{cell_width}}" for lbl in labels))
     print("".join(f"{str(t) + 'm':^{cell_width}}" for t in totals))
+
+
+# ---------- goal graphs ----------
+
+def banner(text, width):
+    """text centred in width, one rainbow colour per character."""
+    coloured = "".join(f"\033[1;38;5;{RAINBOW[i % len(RAINBOW)]}m{ch}"
+                       for i, ch in enumerate(text))
+    return " " * max((width - len(text)) // 2, 0) + coloured + RESET
+
+
+def tier_glyph(tier):
+    if tier is None:
+        return " "
+    if tier == MISSED:
+        return f"{GREY}·{RESET}"
+    glyph, colour = TIER_GLYPHS[tier]
+    return f"{BOLD}\033[{colour}m{glyph}{RESET}"
+
+
+def project_label(code):
+    return f"{BOLD}\033[{colour_for(code)}m{code:<{PROJECT_MAX_LEN}}{RESET}"
+
+
+def hits(tiers):
+    """Days at good or better out of the settled planned days, e.g. '3/5'."""
+    planned = [t for t in tiers if t is not None]
+    return f"{DIM}{sum(t >= GOOD for t in planned)}/{len(planned)}{RESET}"
+
+
+def print_goal_week(days, title):
+    """One row per project, one glyph per day, with hits and the current streak."""
+    goals = read_goals()
+    poms = daily_poms(read_log())
+    today = datetime.now().date()
+    grid = tier_grid(goals, poms, days, today)
+    if not grid:
+        return
+    width = PROJECT_MAX_LEN + 2 + 4 * len(days) + 12
+    print(f"\n{banner(title, width)}\n")
+    print(" " * (PROJECT_MAX_LEN + 2) + "".join(f"{d.strftime('%a'):^4}" for d in days))
+    for project, tiers in grid.items():
+        cells = "".join(f" {tier_glyph(t)}  " for t in tiers)
+        streak = streaks(goals, poms, project, today)[0]
+        fire = f"  🔥 {streak}" if streak else ""
+        print(f"{project_label(project)}  {cells}  {hits(tiers)}{fire}")
+    settled = [t for tiers in grid.values() for t in tiers if t is not None]
+    if days[-1] <= today and settled and MISSED not in settled:
+        print(f"\n{banner('*:・゚✧ PERFECT WEEK ✧゚・:*', width)}")
+
+
+def print_goal_month(today):
+    """The month so far as a strip: one character per day, a gap before each Monday."""
+    first = today.replace(day=1)
+    days = [first + timedelta(days=i)
+            for i in range(calendar.monthrange(today.year, today.month)[1])]
+    grid = tier_grid(read_goals(), daily_poms(read_log()), days, today)
+    if not grid:
+        return
+
+    def gap(d):
+        return " " if d.weekday() == 0 and d.day != 1 else ""
+
+    width = PROJECT_MAX_LEN + 2 + len(days) + 5 + 6
+    print(f"\n{banner(f'★ {calendar.month_name[today.month].upper()} ★', width)}\n")
+    print(" " * (PROJECT_MAX_LEN + 2) + "".join(f"{gap(d)}{d.strftime('%a')[0]}" for d in days))
+    for project, tiers in grid.items():
+        cells = "".join(gap(d) + tier_glyph(t) for d, t in zip(days, tiers))
+        print(f"{project_label(project)}  {cells}  {hits(tiers)}")
+
+
+def print_after_pom():
+    """The stacked chart, the goals graph for the same 7 days, and today's progress."""
+    today = datetime.now().date()
+    print_week_summary()
+    print_goal_week([today - timedelta(days=i) for i in range(6, -1, -1)], "✧ LAST 7 DAYS ✧")
+    print_todays_goals()
 
 
 def progress_line(p):
@@ -335,8 +416,7 @@ def run_manual():
                 break_minutes, break_start, break_end)
     print(f"\nLogged to {LOG_PATH}")
     print_tier_reached(before, project_progress(project))
-    print_week_summary()
-    print_todays_goals()
+    print_after_pom()
 
 
 def describe_goal(goal):
@@ -386,8 +466,7 @@ def run_pom():
     project = ask_project(default="MSC")
     task = input("Task: ").strip() or "unspecified"
     do_one_pom(project, task)
-    print_week_summary()
-    print_todays_goals()
+    print_after_pom()
 
 
 def run_repeats(count):
@@ -415,8 +494,7 @@ def run_repeats(count):
         print("\nStopped.")
     finally:
         print(f"\nCompleted {completed} pom(s).")
-        print_week_summary()
-        print_todays_goals()
+        print_after_pom()
 
 
 def main():
@@ -442,7 +520,12 @@ def main():
     args = parser.parse_args()
 
     if args.report:
+        today = datetime.now().date()
+        monday = today - timedelta(days=today.weekday())
         print_week_summary()
+        print_goal_week([monday + timedelta(days=i) for i in range(7)],
+                        f"✧ WEEK OF {monday.strftime('%d %b').upper()} ✧")
+        print_goal_month(today)
         print_goal_summary()
     elif args.goal:
         run_goal()
