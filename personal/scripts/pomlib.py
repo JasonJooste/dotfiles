@@ -25,6 +25,9 @@ GOAL_HEADERS = ["from", "project", "good", "great", "stretch", "days"]
 # poms are counted in 25 minute units, so a 50 minute pom counts as 2
 POM_UNIT_MINUTES = 25
 
+# daily limits, in poms, on each tier's goals summed across projects
+TIER_LIMITS = {"good": 8, "great": 16, "stretch": 32}
+
 # tiers for a planned day; unplanned days have no tier (None)
 MISSED, GOOD, GREAT, STRETCH = 0, 1, 2, 3
 
@@ -94,6 +97,31 @@ def parse_days(text):
     return days
 
 
+def format_days(days):
+    """The reverse of parse_days: '*' for every day, otherwise e.g. 'Mon-Wed Sat',
+    with runs of three or more days written as a range."""
+    if days == set(range(7)):
+        return "*"
+    ordered = sorted(days)
+    parts = []
+    i = 0
+    while i < len(ordered):
+        j = i
+        while j + 1 < len(ordered) and ordered[j + 1] == ordered[j] + 1:
+            j += 1
+        if j - i >= 2:
+            parts.append(f"{WEEKDAYS[ordered[i]]}-{WEEKDAYS[ordered[j]]}")
+        else:
+            parts.extend(WEEKDAYS[d] for d in ordered[i:j + 1])
+        i = j + 1
+    return " ".join(parts)
+
+
+def check_tiers(good, great, stretch):
+    if not 0 <= good <= great <= stretch:
+        raise ValueError("needs 0 <= good <= great <= stretch")
+
+
 def read_goals(path=GOALS_PATH):
     """Returns the goal rows sorted by start date. Bad rows are skipped with a warning."""
     if not path.exists():
@@ -117,13 +145,24 @@ def read_goals(path=GOALS_PATH):
                 "stretch": int(row["stretch"]),
                 "days": parse_days(row["days"]),
             }
-            if not 0 <= goal["good"] <= goal["great"] <= goal["stretch"]:
-                raise ValueError("needs 0 <= good <= great <= stretch")
+            check_tiers(goal["good"], goal["great"], goal["stretch"])
         except (ValueError, TypeError, AttributeError) as e:
             print(f"Warning: skipping goal row {dict(row)} in {path}: {e}")
             continue
         goals.append(goal)
+    # sorted() is stable, so a later row with the same date and project wins
     return sorted(goals, key=lambda g: g["from"])
+
+
+def add_goal(project, good, great, stretch, days, start, path=GOALS_PATH):
+    """Appends a goal row, creating the file with a header if needed."""
+    check_tiers(good, great, stretch)
+    new_file = not path.exists()
+    with open(path, "a", newline="") as f:
+        writer = csv.writer(f)
+        if new_file:
+            writer.writerow(GOAL_HEADERS)
+        writer.writerow([start.isoformat(), project, good, great, stretch, format_days(days)])
 
 
 def goal_for(goals, project, day):
@@ -135,6 +174,31 @@ def goal_for(goals, project, day):
     if current is None or current["good"] == 0:
         return None
     return current
+
+
+def weekday_totals(goals, day):
+    """Each tier's goals summed across projects, per weekday, using the goals in
+    effect on day. Returns a list of 7 dicts keyed like TIER_LIMITS (Mon first)."""
+    totals = [{key: 0 for key in TIER_LIMITS} for _ in WEEKDAYS]
+    for project in {g["project"] for g in goals}:
+        goal = goal_for(goals, project, day)
+        if goal is None:
+            continue
+        for weekday in goal["days"]:
+            for key in TIER_LIMITS:
+                totals[weekday][key] += goal[key]
+    return totals
+
+
+def over_limits(totals):
+    """(tier, total, weekdays) for each tier total over its limit, with weekdays
+    that share the same total grouped together."""
+    over = {}
+    for weekday, day_totals in enumerate(totals):
+        for key, limit in TIER_LIMITS.items():
+            if day_totals[key] > limit:
+                over.setdefault((key, day_totals[key]), set()).add(weekday)
+    return [(key, total, days) for (key, total), days in over.items()]
 
 
 def daily_poms(log_rows):

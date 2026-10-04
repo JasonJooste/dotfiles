@@ -9,6 +9,7 @@ colour-coded weekly summary of poms.
 Usage:
     pommer            # run a pom
     pommer --report   # just show the weekly summary
+    pommer --goal     # add or change a project goal
 """
 
 import argparse
@@ -17,7 +18,11 @@ import sys
 import time
 from datetime import datetime, timedelta
 
-from pomlib import LOG_PATH, PROJECT_MAX_LEN, colour_for, log_session, read_log
+from pomlib import (
+    GOALS_PATH, LOG_PATH, PROJECT_MAX_LEN, TIER_LIMITS, WEEKDAYS,
+    add_goal, colour_for, format_days, goal_for, log_session, over_limits, parse_days,
+    read_goals, read_log, weekday_totals,
+)
 
 RESET = "\033[0m"
 DIM = "\033[2m"
@@ -123,6 +128,24 @@ def print_week_summary(days=7):
     print("".join(f"{str(t) + 'm':^{cell_width}}" for t in totals))
 
 
+def limit_warnings(totals):
+    """One warning line per tier total that's over its daily limit."""
+    return [f"Warning: {key} goals add up to {total} poms on {format_days(days)}, "
+            f"over the limit of {TIER_LIMITS[key]}"
+            for key, total, days in over_limits(totals)]
+
+
+def print_goal_summary():
+    """Each tier's daily goals summed across projects, per weekday."""
+    totals = weekday_totals(read_goals(), datetime.now().date())
+    print("\nDaily goals (poms)")
+    print(f"{'':10}" + "".join(f"{d:>5}" for d in WEEKDAYS) + f"{'limit':>7}")
+    for key, limit in TIER_LIMITS.items():
+        print(f"{key:10}" + "".join(f"{t[key]:>5}" for t in totals) + f"{limit:>7}")
+    for line in limit_warnings(totals):
+        print(line)
+
+
 # ---------- main flow ----------
 
 def ask_choice(prompt, options, default=None):
@@ -149,9 +172,33 @@ def ask_project(default):
     """Prompts for a project code, uppercased and at most PROJECT_MAX_LEN chars."""
     while True:
         project = ask_text("Project code", default=default).upper()
-        if len(project) <= PROJECT_MAX_LEN:
+        if not project:
+            print("  Enter a project code")
+        elif len(project) > PROJECT_MAX_LEN:
+            print(f"Project codes can't be longer than {PROJECT_MAX_LEN} characters")
+        else:
             return project
-        print(f"Project codes can't be longer than {PROJECT_MAX_LEN} characters")
+
+
+def ask_count(prompt, default=None, minimum=0):
+    """Prompts for a whole number >= minimum. A default below the minimum is dropped."""
+    if default is not None and default < minimum:
+        default = None
+    while True:
+        raw = ask_text(prompt, default=None if default is None else str(default))
+        if raw.isdigit() and int(raw) >= minimum:
+            return int(raw)
+        print(f"  Enter a whole number of {minimum} or more")
+
+
+def ask_days(default):
+    """Prompts for the days a goal applies to, returned as a set of weekday numbers."""
+    while True:
+        raw = ask_text("Days (*, Mon-Fri, Mon Wed Fri)", default=default)
+        try:
+            return parse_days(raw)
+        except ValueError:
+            print("  Couldn't parse the days. Use *, a range like Mon-Fri, or a list like Mon Wed Fri.")
 
 
 def ask_date(prompt, default_date):
@@ -236,6 +283,48 @@ def run_manual():
     print_week_summary()
 
 
+def describe_goal(goal):
+    return (f"good {goal['good']}, great {goal['great']}, stretch {goal['stretch']}, "
+            f"days {format_days(goal['days'])}")
+
+
+def run_goal():
+    """Adds a goal row that takes effect today, replacing the project's current goal."""
+    print("=== pommer (add goal) ===")
+    project = ask_project(default=None)
+    today = datetime.now().date()
+    goals = read_goals()
+    current = goal_for(goals, project, today)
+    if current:
+        print(f"  Current goal: {describe_goal(current)}")
+        good = ask_count("Good (daily poms, 0 retires the goal)", current["good"])
+    else:
+        print(f"  {project} has no goal yet.")
+        good = ask_count("Good (daily poms)", minimum=1)
+
+    if good == 0:
+        goal = {"good": 0, "great": 0, "stretch": 0, "days": current["days"]}
+    else:
+        # keep the current great/stretch if good hasn't changed, otherwise scale from good
+        keep = current and current["good"] == good
+        great = ask_count("Great", current["great"] if keep else good * 2, minimum=good)
+        stretch = ask_count("Stretch", current["stretch"] if keep else max(good * 4, great),
+                            minimum=great)
+        days = ask_days(format_days(current["days"]) if current else "Mon-Fri")
+        goal = {"good": good, "great": great, "stretch": stretch, "days": days}
+
+    print(f"\n  From {today}, {project}: {describe_goal(goal)}")
+    # goal_for takes the last matching row, so the new goal replaces the current one
+    proposed = goals + [{**goal, "from": today, "project": project}]
+    for line in limit_warnings(weekday_totals(proposed, today)):
+        print(f"  {line}")
+    if ask_text("Add this goal? (y/n)", default="y").lower() != "y":
+        print("Nothing added.")
+        return
+    add_goal(project, goal["good"], goal["great"], goal["stretch"], goal["days"], today)
+    print(f"\nAdded to {GOALS_PATH}")
+
+
 def run_pom():
     print("=== pommer ===")
     project = ask_project(default="MSC")
@@ -281,10 +370,17 @@ def main():
         help="run multiple poms back-to-back without showing the summary each time. "
              "Give a number to repeat that many times, or omit it to run until Ctrl+C.",
     )
+    parser.add_argument(
+        "--goal", "-g", action="store_true",
+        help="add or change a project's daily pom goal (takes effect today)",
+    )
     args = parser.parse_args()
 
     if args.report:
         print_week_summary()
+        print_goal_summary()
+    elif args.goal:
+        run_goal()
     elif args.manual:
         run_manual()
     elif args.repeats is not None:
