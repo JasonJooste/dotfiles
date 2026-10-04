@@ -226,7 +226,8 @@ def tier_for(goals, poms, project, day):
 
 def todays_progress(goals, poms, today):
     """One dict per project planned today: poms done, the good goal, the tier
-    reached, and the next tier with poms left to it (None and 0 after stretch)."""
+    reached, the next tier with poms left to it (None and 0 after stretch), and
+    the current streak."""
     progress = []
     for project in sorted({g["project"] for g in goals}):
         tier = tier_for(goals, poms, project, today)
@@ -237,7 +238,8 @@ def todays_progress(goals, poms, today):
         next_tier = None if tier == STRETCH else tier + 1
         left = goal[TIER_NAMES[next_tier]] - done if next_tier else 0
         progress.append({"project": project, "done": done, "good": goal["good"],
-                         "tier": tier, "next": next_tier, "left": left})
+                         "tier": tier, "next": next_tier, "left": left,
+                         "streak": streaks(goals, poms, project, today)[0]})
     return progress
 
 

@@ -20,13 +20,17 @@ import time
 from datetime import datetime, timedelta
 
 from pomlib import (
-    GOALS_PATH, LOG_PATH, MISSED, PROJECT_MAX_LEN, TIER_LIMITS, TIER_NAMES, WEEKDAYS,
+    GOALS_PATH, GOOD, GREAT, LOG_PATH, MISSED, PROJECT_MAX_LEN, STRETCH, TIER_LIMITS, TIER_NAMES, WEEKDAYS,
     add_goal, colour_for, daily_poms, format_days, goal_for, log_session, over_limits,
     parse_days, read_goals, read_log, todays_progress, weekday_totals,
 )
 
 RESET = "\033[0m"
 DIM = "\033[2m"
+BOLD = "\033[1m"
+
+# glyph and ANSI colour per tier: green good, yellow great, teal stretch
+TIER_GLYPHS = {GOOD: ("◆", 32), GREAT: ("★", 33), STRETCH: ("✦", 36)}
 
 
 # ---------- sound ----------
@@ -130,19 +134,40 @@ def print_week_summary(days=7):
 
 
 def progress_line(p):
-    """e.g. 'MSC          3/4  1 to good' or 'TBK          5/4  good, 1 to great'."""
+    """e.g. 'MSC          3/4  1 to good  🔥 2 day streak'."""
     colour = colour_for(p["project"])
     line = f"\033[{colour}m{p['project']:<10}{RESET}  {p['done']:>3}/{p['good']:<3}"
     if p["next"] is None:
-        return f"{line}  stretch reached"
-    to_next = f"{p['left']} to {TIER_NAMES[p['next']]}"
-    if p["tier"] == MISSED:
-        return f"{line}  {to_next}"
-    return f"{line}  {TIER_NAMES[p['tier']]}, {to_next}"
+        status = "stretch reached"
+    elif p["tier"] == MISSED:
+        status = f"{p['left']} to {TIER_NAMES[p['next']]}"
+    else:
+        status = f"{TIER_NAMES[p['tier']]}, {p['left']} to {TIER_NAMES[p['next']]}"
+    if p["streak"]:
+        status += f"  🔥 {p['streak']} day streak"
+    return f"{line}  {status}"
 
 
 def todays_progress_now():
     return todays_progress(read_goals(), daily_poms(read_log()), datetime.now().date())
+
+
+def project_progress(project):
+    """Today's progress for one project, or None if it has no goal planned today."""
+    for p in todays_progress_now():
+        if p["project"] == project:
+            return p
+    return None
+
+
+def print_tier_reached(before, after):
+    """A highlighted line when a pom moves a project up a tier today, with its streak."""
+    if before is None or after is None or after["tier"] <= before["tier"]:
+        return
+    glyph, colour = TIER_GLYPHS[after["tier"]]
+    name = TIER_NAMES[after["tier"]].upper()
+    print(f"\n{BOLD}\033[{colour}m{glyph} {after['project']}: {name} reached {glyph}{RESET}"
+          f"  🔥 {after['streak']} day streak")
 
 
 def print_todays_goals():
@@ -279,9 +304,11 @@ def do_one_pom(project, task, iteration_label=""):
     print(f"\n{datetime.now().strftime('%H:%M')}: Break over. Back to it.")
     ding(3)  # end of break
 
+    before = project_progress(project)
     log_session(project, task, pom_minutes, pom_start, pom_end,
                 break_minutes, break_start, break_end)
     print(f"\nLogged to {LOG_PATH}")
+    print_tier_reached(before, project_progress(project))
 
     return pom_interrupted or break_interrupted
 
@@ -303,9 +330,11 @@ def run_manual():
     break_start = pom_end
     break_end = break_start + timedelta(minutes=break_minutes)
 
+    before = project_progress(project)
     log_session(project, task, pom_minutes, pom_start, pom_end,
                 break_minutes, break_start, break_end)
     print(f"\nLogged to {LOG_PATH}")
+    print_tier_reached(before, project_progress(project))
     print_week_summary()
     print_todays_goals()
 
@@ -376,9 +405,9 @@ def run_repeats(count):
             label = f" ({completed + 1}/{count})" if count else f" (#{completed + 1})"
             interrupted = do_one_pom(project, task, iteration_label=label)
             completed += 1
-            for p in todays_progress_now():
-                if p["project"] == project:
-                    print(progress_line(p))
+            progress = project_progress(project)
+            if progress:
+                print(progress_line(progress))
             if interrupted:
                 print("\nInterrupted — stopping repeats.")
                 break
