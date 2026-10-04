@@ -47,7 +47,7 @@ def countdown(minutes, label):
     start_dt = datetime.now()
     total_seconds = minutes * 60
     interrupted = False
-    print(f"\n{start_dt.strftime('%H:%M')}: {label} — {minutes} min. Ctrl+C to bail early.\n")
+    print(f"\n{start_dt.strftime('%H:%M')}: {label} — {minutes} min. Press Ctrl+C to stop early.\n")
     try:
         while total_seconds > 0:
             mins, secs = divmod(total_seconds, 60)
@@ -134,7 +134,7 @@ def ask_choice(prompt, options, default=None):
             return default
         if raw in [str(o) for o in options]:
             return int(raw)
-        print(f"  enter one of: {opts_str}")
+        print(f"  Enter one of: {opts_str}")
 
 
 def ask_text(prompt, default=None):
@@ -151,7 +151,7 @@ def ask_project(default):
         project = ask_text("Project code", default=default).upper()
         if len(project) <= PROJECT_MAX_LEN:
             return project
-        print(f"Project code must be less than {PROJECT_MAX_LEN} characters")
+        print(f"Project codes can't be longer than {PROJECT_MAX_LEN} characters")
 
 
 def ask_date(prompt, default_date):
@@ -188,7 +188,7 @@ def ask_time(prompt, default_dt):
                 return datetime.combine(default_dt.date(), t)
             except ValueError:
                 continue
-        print("  couldn't parse that — try 24h HH:MM or e.g. 2:30pm")
+        print("  Couldn't parse the time. Use 24h HH:MM or a time like 2:30pm.")
 
 
 def do_one_pom(project, task, iteration_label=""):
@@ -297,4 +297,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nBailed. Nothing logged.")
+        print("\nCancelled. Nothing logged.")
