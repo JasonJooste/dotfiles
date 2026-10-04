@@ -30,6 +30,7 @@ TIER_LIMITS = {"good": 8, "great": 16, "stretch": 32}
 
 # tiers for a planned day; unplanned days have no tier (None)
 MISSED, GOOD, GREAT, STRETCH = 0, 1, 2, 3
+TIER_NAMES = {MISSED: "missed", GOOD: "good", GREAT: "great", STRETCH: "stretch"}
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -221,6 +222,23 @@ def tier_for(goals, poms, project, day):
         if count >= goal[key]:
             return tier
     return MISSED
+
+
+def todays_progress(goals, poms, today):
+    """One dict per project planned today: poms done, the good goal, the tier
+    reached, and the next tier with poms left to it (None and 0 after stretch)."""
+    progress = []
+    for project in sorted({g["project"] for g in goals}):
+        tier = tier_for(goals, poms, project, today)
+        if tier is None:
+            continue
+        goal = goal_for(goals, project, today)
+        done = poms.get((project, today), 0)
+        next_tier = None if tier == STRETCH else tier + 1
+        left = goal[TIER_NAMES[next_tier]] - done if next_tier else 0
+        progress.append({"project": project, "done": done, "good": goal["good"],
+                         "tier": tier, "next": next_tier, "left": left})
+    return progress
 
 
 def streaks(goals, poms, project, today):

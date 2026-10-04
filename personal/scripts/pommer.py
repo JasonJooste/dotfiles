@@ -10,6 +10,7 @@ Usage:
     pommer            # run a pom
     pommer --report   # just show the weekly summary
     pommer --goal     # add or change a project goal
+    pommer -t         # show what's left to reach today's goals
 """
 
 import argparse
@@ -19,9 +20,9 @@ import time
 from datetime import datetime, timedelta
 
 from pomlib import (
-    GOALS_PATH, LOG_PATH, PROJECT_MAX_LEN, TIER_LIMITS, WEEKDAYS,
-    add_goal, colour_for, format_days, goal_for, log_session, over_limits, parse_days,
-    read_goals, read_log, weekday_totals,
+    GOALS_PATH, LOG_PATH, MISSED, PROJECT_MAX_LEN, TIER_LIMITS, TIER_NAMES, WEEKDAYS,
+    add_goal, colour_for, daily_poms, format_days, goal_for, log_session, over_limits,
+    parse_days, read_goals, read_log, todays_progress, weekday_totals,
 )
 
 RESET = "\033[0m"
@@ -126,6 +127,31 @@ def print_week_summary(days=7):
     print("─" * chart_width)
     print("".join(f"{lbl:^{cell_width}}" for lbl in labels))
     print("".join(f"{str(t) + 'm':^{cell_width}}" for t in totals))
+
+
+def progress_line(p):
+    """e.g. 'MSC          3/4  1 to good' or 'TBK          5/4  good, 1 to great'."""
+    colour = colour_for(p["project"])
+    line = f"\033[{colour}m{p['project']:<10}{RESET}  {p['done']:>3}/{p['good']:<3}"
+    if p["next"] is None:
+        return f"{line}  stretch reached"
+    to_next = f"{p['left']} to {TIER_NAMES[p['next']]}"
+    if p["tier"] == MISSED:
+        return f"{line}  {to_next}"
+    return f"{line}  {TIER_NAMES[p['tier']]}, {to_next}"
+
+
+def todays_progress_now():
+    return todays_progress(read_goals(), daily_poms(read_log()), datetime.now().date())
+
+
+def print_todays_goals():
+    progress = todays_progress_now()
+    print("\nToday's goals")
+    if not progress:
+        print("  No goals planned for today")
+    for p in progress:
+        print(f"  {progress_line(p)}")
 
 
 def limit_warnings(totals):
@@ -281,6 +307,7 @@ def run_manual():
                 break_minutes, break_start, break_end)
     print(f"\nLogged to {LOG_PATH}")
     print_week_summary()
+    print_todays_goals()
 
 
 def describe_goal(goal):
@@ -331,6 +358,7 @@ def run_pom():
     task = input("Task: ").strip() or "unspecified"
     do_one_pom(project, task)
     print_week_summary()
+    print_todays_goals()
 
 
 def run_repeats(count):
@@ -348,6 +376,9 @@ def run_repeats(count):
             label = f" ({completed + 1}/{count})" if count else f" (#{completed + 1})"
             interrupted = do_one_pom(project, task, iteration_label=label)
             completed += 1
+            for p in todays_progress_now():
+                if p["project"] == project:
+                    print(progress_line(p))
             if interrupted:
                 print("\nInterrupted — stopping repeats.")
                 break
@@ -356,6 +387,7 @@ def run_repeats(count):
     finally:
         print(f"\nCompleted {completed} pom(s).")
         print_week_summary()
+        print_todays_goals()
 
 
 def main():
@@ -374,6 +406,10 @@ def main():
         "--goal", "-g", action="store_true",
         help="add or change a project's daily pom goal (takes effect today)",
     )
+    parser.add_argument(
+        "--todays-goals", "-t", action="store_true",
+        help="show what's left to reach today's goals",
+    )
     args = parser.parse_args()
 
     if args.report:
@@ -381,6 +417,8 @@ def main():
         print_goal_summary()
     elif args.goal:
         run_goal()
+    elif args.todays_goals:
+        print_todays_goals()
     elif args.manual:
         run_manual()
     elif args.repeats is not None:
