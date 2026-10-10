@@ -29,7 +29,7 @@ import time
 from datetime import datetime, timedelta
 
 from pomlib import (
-    GOALS_PATH, GOOD, GREAT, LOG_PATH, MISSED, PROJECT_MAX_LEN, STRETCH,
+    GOALS_PATH, GOOD, GREAT, LOG_PATH, MISSED, OFF, PROJECT_MAX_LEN, STRETCH,
     TIER_LIMITS, TIER_NAMES, WEEKDAYS,
     add_goal, colour_for, daily_poms, format_days, goal_for, log_session, over_limits,
     parse_days, read_goals, read_log, streaks, tier_grid, todays_progress, weekday_totals,
@@ -39,10 +39,13 @@ RESET = "\033[0m"
 DIM = "\033[2m"
 BOLD = "\033[1m"
 GREY = "\033[38;5;240m"
+LIGHT_GREEN = "\033[38;5;46m"
+YELLOW = "\033[38;5;226m"
+TEAL = "\033[38;5;43m"
 RAINBOW = [196, 208, 226, 46, 51, 33, 201]
 
-# glyph and 256-colour code per tier: green good, yellow great, teal stretch
-TIER_GLYPHS = {GOOD: ("◆", "38;5;46"), GREAT: ("★", "38;5;226"), STRETCH: ("✦", "38;5;43")}
+# glyph and colour per tier
+TIER_GLYPHS = {GOOD: ("◆", LIGHT_GREEN), GREAT: ("★", YELLOW), STRETCH: ("✦", TEAL)}
 
 
 # ---------- sound ----------
@@ -154,13 +157,20 @@ def banner(text, width):
     return " " * max((width - len(text)) // 2, 0) + coloured + RESET
 
 
+def heading(text, width):
+    """text centred in width, in bold."""
+    return " " * max((width - len(text)) // 2, 0) + BOLD + text + RESET
+
+
 def tier_glyph(tier):
     if tier is None:
         return " "
+    if tier == OFF:
+        return f"{LIGHT_GREEN}·{RESET}"
     if tier == MISSED:
         return f"{GREY}·{RESET}"
     glyph, colour = TIER_GLYPHS[tier]
-    return f"{BOLD}\033[{colour}m{glyph}{RESET}"
+    return f"{BOLD}{colour}{glyph}{RESET}"
 
 
 def project_label(code):
@@ -169,7 +179,7 @@ def project_label(code):
 
 def hits(tiers):
     """Days at good or better out of the settled planned days, e.g. '3/5'."""
-    planned = [t for t in tiers if t is not None]
+    planned = [t for t in tiers if t not in (None, OFF)]
     return f"{DIM}{sum(t >= GOOD for t in planned)}/{len(planned)}{RESET}"
 
 
@@ -182,14 +192,14 @@ def print_goal_week(days, title):
     if not grid:
         return
     width = PROJECT_MAX_LEN + 2 + 4 * len(days) + 12
-    print(f"\n{banner(title, width)}\n")
+    print(f"\n{heading(title, width)}\n")
     print(" " * (PROJECT_MAX_LEN + 2) + "".join(f"{d.strftime('%a'):^4}" for d in days))
     for project, tiers in grid.items():
         cells = "".join(f" {tier_glyph(t)}  " for t in tiers)
         streak = streaks(goals, poms, project, today)[0]
         fire = f"  🔥 {streak}" if streak else ""
         print(f"{project_label(project)}  {cells}  {hits(tiers)}{fire}")
-    settled = [t for tiers in grid.values() for t in tiers if t is not None]
+    settled = [t for tiers in grid.values() for t in tiers if t not in (None, OFF)]
     if days[-1] <= today and settled and MISSED not in settled:
         print(f"\n{banner('*:・゚✧ PERFECT WEEK ✧゚・:*', width)}")
 
@@ -207,7 +217,7 @@ def print_goal_month(today):
         return " " if d.weekday() == 0 and d.day != 1 else ""
 
     width = PROJECT_MAX_LEN + 2 + len(days) + 5 + 6
-    print(f"\n{banner(f'★ {calendar.month_name[today.month].upper()} ★', width)}\n")
+    print(f"\n{heading(f'★ {calendar.month_name[today.month].upper()} ★', width)}\n")
     print(" " * (PROJECT_MAX_LEN + 2) + "".join(f"{gap(d)}{d.strftime('%a')[0]}" for d in days))
     for project, tiers in grid.items():
         cells = "".join(gap(d) + tier_glyph(t) for d, t in zip(days, tiers))
@@ -255,7 +265,7 @@ def print_tier_reached(before, after):
         return
     glyph, colour = TIER_GLYPHS[after["tier"]]
     name = TIER_NAMES[after["tier"]].upper()
-    print(f"\n{BOLD}\033[{colour}m{glyph} {after['project']}: {name} reached {glyph}{RESET}"
+    print(f"\n{BOLD}{colour}{glyph} {after['project']}: {name} reached {glyph}{RESET}"
           f"  🔥 {after['streak']} day streak")
 
 

@@ -28,15 +28,17 @@ POM_UNIT_MINUTES = 25
 # daily limits, in poms, on each tier's goals summed across projects
 TIER_LIMITS = {"good": 8, "great": 16, "stretch": 32}
 
-# tiers for a planned day; unplanned days have no tier (None)
-MISSED, GOOD, GREAT, STRETCH = 0, 1, 2, 3
+# tiers for a planned day; unplanned days have no tier (None), shown as OFF in grids
+OFF, MISSED, GOOD, GREAT, STRETCH = -1, 0, 1, 2, 3
 TIER_NAMES = {MISSED: "missed", GOOD: "good", GREAT: "great", STRETCH: "stretch"}
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-# ANSI colour codes, cycled through per project code (deterministic, not hash()-based
-# since str hashing is randomised per run)
-COLOURS = [31, 32, 33, 34, 35, 36, 91, 92, 93, 94, 95, 96]
+# muted 256-colour codes, ordered so neighbouring ids get different hues. Each project
+# takes the next one in order of first appearance in the log, wrapping round at the end.
+COLOURS = [131, 108, 104, 181, 72, 140, 143, 109, 176, 187, 67, 175,
+           71, 103, 174, 151, 97, 180, 73, 139, 186, 152, 132, 150,
+           61, 138, 114, 146, 137, 115, 133, 144, 116, 182, 107, 110]
 
 
 # ---------- logging ----------
@@ -245,8 +247,8 @@ def todays_progress(goals, poms, today):
 
 def tier_grid(goals, poms, days, today):
     """{project: [tier per day]} for each project with a planned day among days.
-    Days that aren't settled yet are None like unplanned days: days after today,
-    and today until good is reached."""
+    Unplanned days up to today are OFF. Days that aren't settled yet are None:
+    days after today, and today until good is reached."""
     grid = {}
     for project in sorted({g["project"] for g in goals}):
         tiers = []
@@ -256,6 +258,8 @@ def tier_grid(goals, poms, days, today):
             planned |= tier is not None
             if day > today or (day == today and tier == MISSED):
                 tier = None
+            elif tier is None:
+                tier = OFF
             tiers.append(tier)
         if planned:
             grid[project] = tiers
@@ -286,5 +290,7 @@ def streaks(goals, poms, project, today):
 # ---------- colours ----------
 
 def colour_for(code):
-    idx = sum(ord(c) for c in code) % len(COLOURS)
-    return COLOURS[idx]
+    """The ANSI colour for a project. A project not logged yet gets the next id."""
+    ids = list(dict.fromkeys(r["project"] for r in read_log()))
+    idx = ids.index(code) if code in ids else len(ids)
+    return f"38;5;{COLOURS[idx % len(COLOURS)]}"
