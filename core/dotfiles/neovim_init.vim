@@ -16,6 +16,10 @@ vim.pack.add({
   -- For vim/tmux integration
   'https://github.com/preservim/vimux',
 }, { confirm = false })
+vim.pack.add({
+    -- Align markdown tables
+    'https://github.com/dhruvasagar/vim-table-mode',
+  }, { confirm = false })
 EOF
 " Allow project-level settings overrides
 set exrc
