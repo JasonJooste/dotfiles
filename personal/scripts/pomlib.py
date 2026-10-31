@@ -78,6 +78,14 @@ def read_log():
         return list(reader)
 
 
+def last_project_and_task(fallback_project="MSC", fallback_task="unspecified"):
+    """The project and task of the last logged pom, to continue the same task."""
+    rows = read_log()
+    if not rows:
+        return fallback_project, fallback_task
+    return rows[-1]["project"], rows[-1]["task"]
+
+
 # ---------- goals ----------
 
 def parse_days(text):

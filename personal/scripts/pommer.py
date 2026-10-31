@@ -31,7 +31,8 @@ from datetime import datetime, timedelta
 from pomlib import (
     GOALS_PATH, GOOD, GREAT, LOG_PATH, MISSED, OFF, PROJECT_MAX_LEN, STRETCH,
     TIER_LIMITS, TIER_NAMES, WEEKDAYS,
-    add_goal, colour_for, daily_poms, format_days, goal_for, log_session, over_limits,
+    add_goal, colour_for, daily_poms, format_days, goal_for, last_project_and_task,
+    log_session, over_limits,
     parse_days, read_goals, read_log, streaks, tier_grid, todays_progress, weekday_totals,
 )
 
@@ -414,8 +415,9 @@ def do_one_pom(project, task, iteration_label=""):
 
 def run_manual():
     print("=== pommer (manual entry) ===")
-    project = ask_project(default="MSC")
-    task = ask_text("Task", default="unspecified")
+    last_project, last_task = last_project_and_task()
+    project = ask_project(default=last_project)
+    task = ask_text("Task", default=last_task)
     pom_minutes = ask_choice("Pom length (minutes)", [25, 50], default=25)
     break_minutes = 5 if pom_minutes == 25 else 10
 
@@ -481,8 +483,9 @@ def run_goal():
 
 def run_pom():
     print("=== pommer ===")
-    project = ask_project(default="MSC")
-    task = input("Task: ").strip() or "unspecified"
+    last_project, last_task = last_project_and_task()
+    project = ask_project(default=last_project)
+    task = ask_text("Task", default=last_task)
     do_one_pom(project, task)
     print_after_pom()
 
@@ -491,14 +494,13 @@ def run_repeats(count):
     """count == 0 means run indefinitely until Ctrl+C. No summary is shown between
     poms — only once at the end, or immediately if interrupted."""
     print("=== pommer (repeat mode) ===")
-    project = None
-    task = None
+    project, task = last_project_and_task()
 
     completed = 0
     try:
         while count == 0 or completed < count:
-            project = ask_project(default=project or "MSC")
-            task = ask_text("Task", default=task or "unspecified")
+            project = ask_project(default=project)
+            task = ask_text("Task", default=task)
             label = f" ({completed + 1}/{count})" if count else f" (#{completed + 1})"
             interrupted = do_one_pom(project, task, iteration_label=label)
             completed += 1
