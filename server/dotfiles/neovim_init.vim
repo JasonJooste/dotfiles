@@ -12,3 +12,8 @@ require('glow').setup({ border = 'none', width_ratio = 1.0, height_ratio = 1.0, 
 EOF
 " Coc bindings
 inoremap <expr> <cr> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
+" Coc extensions, installed on startup if missing (coc-pyright: Python language server)
+let g:coc_global_extensions = ['coc-pyright']
+" Highlight other uses of the symbol under the cursor after a short pause
+set updatetime=300
+autocmd CursorHold * silent call CocActionAsync('highlight')
