@@ -1,1 +1,1 @@
-sudo snap install anki-woodrow
+sudo snap install anki-woodrow steam
