@@ -100,7 +100,7 @@ for tier in "${TIERS[@]}"; do
         done
     fi
     mapfile -t install_scripts < <(find "$SETUP_DIR/$tier" -maxdepth 1 -name '*.sh' | sort)
-    tier_failed=0
+    failed_scripts=()
     # Run all tier install scripts
     for script in "${install_scripts[@]}"; do
         echo "  running $(basename "$script")"
@@ -109,11 +109,11 @@ for tier in "${TIERS[@]}"; do
         else
             code=$?
             echo "ERROR: $(basename "$script") exited with code $code" >&2
-            tier_failed=1
+            failed_scripts+=("$(basename "$script")")
         fi
     done
-    if [ "$tier_failed" -eq 1 ]; then
-        echo "[$tier] finished with errors" >&2
+    if [ "${#failed_scripts[@]}" -gt 0 ]; then
+        echo "[$tier] finished with errors. Failed scripts: ${failed_scripts[*]}" >&2
         exit 1
     fi
     echo "[$tier] done"
